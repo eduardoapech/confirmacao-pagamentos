@@ -2,12 +2,21 @@ import 'package:flutter/material.dart';
 import '../models/pessoa.dart';
 import '../services/api_service.dart';
 
-class PagamentoScreen extends StatelessWidget {
+class PagamentoScreen extends StatefulWidget {
   final Pessoa pessoa;
 
   PagamentoScreen({required this.pessoa});
 
-  final List<String> meses = [
+  @override
+  _PagamentoScreenState createState() => _PagamentoScreenState();
+}
+
+class _PagamentoScreenState extends State<PagamentoScreen> {
+  Set<int> mesesPagos = {};
+  int anoAtual = DateTime.now().year;
+  bool loading = true;
+
+  final List<String> nomesMeses = [
     'Janeiro',
     'Fevereiro',
     'Março',
@@ -22,40 +31,65 @@ class PagamentoScreen extends StatelessWidget {
     'Dezembro'
   ];
 
-  final int anoAtual = DateTime.now().year;
+  @override
+  void initState() {
+    super.initState();
 
-  void confirmarPagamento(BuildContext context, int pessoaId, int mes) async {
+    _carregarPagamentos();
+  }
+
+  Future<void> _carregarPagamentos() async {
+    setState(() => loading = true);
     try {
-      await ApiService.confirmarPagamento(pessoaId, mes.toString());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Pagamento de $mes/$anoAtual confirmado')),
-      );
+      final pagamentos =
+          await ApiService.getPagamentosPorPessoa(widget.pessoa.id);
+      print('Pagamentos recebidos: $pagamentos');
+
+      setState(() {
+        mesesPagos = pagamentos
+            .where((p) => p.ano == anoAtual)
+            .map((p) => p.mes)
+            .toSet();
+        loading = false;
+      });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao confirmar: $e')),
-      );
+      print('Erro ao carregar pagamentos: $e');
+      setState(() => loading = false);
     }
+  }
+
+  Future<void> _confirmarPagamento(int mes) async {
+    setState(() => loading = true);
+    await ApiService.confirmarPagamento(widget.pessoa.id, mes, anoAtual);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Pagamento de ${nomesMeses[mes - 1]} confirmado')),
+    );
+    await _carregarPagamentos();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Pagamentos - ${pessoa.nome}')),
-      body: ListView.builder(
-        itemCount: 12,
-        itemBuilder: (context, index) {
-          final nomeMes = meses[index];
-          final numeroMes = index + 1;
-          return ListTile(
-            title: Text('$nomeMes/$anoAtual'),
-            trailing: ElevatedButton(
-              child: Text('Confirmar'),
-              onPressed: () =>
-                  confirmarPagamento(context, pessoa.id, numeroMes),
+      appBar: AppBar(title: Text('Pagamentos - ${widget.pessoa.nome}')),
+      body: loading
+          ? Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: 12,
+              itemBuilder: (context, index) {
+                final mes = index + 1;
+                final pago = mesesPagos.contains(mes);
+                return ListTile(
+                  title: Text(nomesMeses[index]),
+                  trailing: ElevatedButton(
+                    onPressed: pago ? null : () => _confirmarPagamento(mes),
+                    child: Text(pago ? 'Pago' : 'Confirmar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: pago ? Colors.grey : Colors.blue,
+                    ),
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 }

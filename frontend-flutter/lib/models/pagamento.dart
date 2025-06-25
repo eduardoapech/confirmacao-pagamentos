@@ -5,21 +5,26 @@ class Pagamento {
   int pessoaId;
   Pessoa? pessoa;
   String? dataPagamento;
-  String Mes;
+  int mes;
+  int ano;
 
   Pagamento({
     required this.id,
     required this.pessoaId,
     this.pessoa,
     this.dataPagamento,
-    required this.Mes,
+    required this.mes,
+    required this.ano,
   });
 
-  factory Pagamento.fromJson(Map<String, dynamic> json) => Pagamento(
-        id: json['id'],
-        pessoaId: json['pessoaId'],
-        pessoa: json['pessoa'] != null ? Pessoa.fromJson(json['pessoa']) : null,
-        dataPagamento: json['dataPagamento'],
-        Mes: json['Mes'],
-      );
+  factory Pagamento.fromJson(Map<String, dynamic> json) {
+    return Pagamento(
+      id: json['id'],
+      pessoaId: json['pessoaId'],
+      pessoa: json['pessoa'] != null ? Pessoa.fromJson(json['pessoa']) : null,
+      dataPagamento: json['dataPagamento']?.toString(),
+      mes: json['mes'],
+      ano: json['ano'],
+    );
+  }
 }

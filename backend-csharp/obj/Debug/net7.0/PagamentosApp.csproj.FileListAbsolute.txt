@@ -59,3 +59,4 @@ C:\Users\eduar\project2025\pagamentos_app_completo (1)\backend-csharp\obj\Debug\
 C:\Users\eduar\project2025\pagamentos_app_completo (1)\backend-csharp\obj\Debug\net7.0\PagamentosApp.pdb
 C:\Users\eduar\project2025\pagamentos_app_completo (1)\backend-csharp\obj\Debug\net7.0\PagamentosApp.genruntimeconfig.cache
 C:\Users\eduar\project2025\pagamentos_app_completo (1)\backend-csharp\obj\Debug\net7.0\ref\PagamentosApp.dll
+C:\Users\eduar\project2025\pagamentos_app_completo (1)\backend-csharp\obj\Debug\net7.0\PagamentosApp.sourcelink.json
