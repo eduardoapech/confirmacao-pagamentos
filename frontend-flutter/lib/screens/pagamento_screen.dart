@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pagamentos_app/models/pagamento.dart';
 import '../models/pessoa.dart';
 import '../services/api_service.dart';
 
@@ -16,20 +17,7 @@ class _PagamentoScreenState extends State<PagamentoScreen> {
   int anoAtual = DateTime.now().year;
   bool loading = true;
 
-  final List<String> nomesMeses = [
-    'Janeiro',
-    'Fevereiro',
-    'Março',
-    'Abril',
-    'Maio',
-    'Junho',
-    'Julho',
-    'Agosto',
-    'Setembro',
-    'Outubro',
-    'Novembro',
-    'Dezembro'
-  ];
+  final List<String> nomesMeses = Pagamento.nomesMeses;
 
   @override
   void initState() {
@@ -79,7 +67,20 @@ class _PagamentoScreenState extends State<PagamentoScreen> {
                 final mes = index + 1;
                 final pago = mesesPagos.contains(mes);
                 return ListTile(
-                  title: Text(nomesMeses[index]),
+                  title: Row(
+                    children: [
+                      Text(nomesMeses[index]),
+                      if (!pago && mes < DateTime.now().month)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8.0),
+                          child: Text(
+                            '(Pendente)',
+                            style: TextStyle(
+                                color: Colors.red, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                    ],
+                  ),
                   trailing: ElevatedButton(
                     onPressed: pago ? null : () => _confirmarPagamento(mes),
                     child: Text(pago ? 'Pago' : 'Confirmar'),

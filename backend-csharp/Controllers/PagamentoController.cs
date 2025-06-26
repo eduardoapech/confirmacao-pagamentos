@@ -3,6 +3,7 @@ using PagamentosApp.Models;
 using PagamentosApp.DTOs;
 using System;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace PagamentosApp.Controllers
 {
@@ -74,18 +75,19 @@ namespace PagamentosApp.Controllers
         public IActionResult GetHistorico()
         {
             var historico = _context.Pagamentos
+                .Include(p => p.Pessoa)
                 .OrderByDescending(p => p.DataPagamento)
                 .Select(p => new
                 {
                     nome = p.Pessoa.Nome,
                     ramo = p.Pessoa.Ramo,
-                    dataPagamento = p.DataPagamento,
-                    status = "Pago"
+                    dataPagamento = p.DataPagamento.ToString("dd/MM/yyyy HH:mm"),
+                    status = "Pago",
+                    mes = p.Mes // ← Adicionado aqui
                 })
                 .ToList();
 
             return Ok(historico);
         }
-
     }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pagamentos_app/models/pagamento.dart';
 import '../models/pagamento_historico.dart';
 import '../services/api_service.dart';
 
@@ -9,10 +10,12 @@ class HistoricoScreen extends StatefulWidget {
 
 class _HistoricoScreenState extends State<HistoricoScreen> {
   late Future<List<PagamentoHistorico>> _historico;
+  final List<String> nomesMeses = Pagamento.nomesMeses;
 
   @override
   void initState() {
     super.initState();
+
     _historico = ApiService.getHistoricoPagamentos();
   }
 
@@ -37,9 +40,18 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
             itemBuilder: (context, index) {
               final p = pagamentos[index];
               return ListTile(
-                title: Text(p.nome),
-                subtitle: Text('${p.ramo} - ${p.dataPagamento}'),
-                trailing: Text('✅ ${p.status}'),
+                title: Text('${p.ramo} ${p.nome}'),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Pagamento do mês de ${p.mesFormatado}'),
+                    Text('Confirmado em ${p.dataPagamento}'),
+                    SizedBox(height: 4),
+                    Text('✅ ${p.status}',
+                        style: TextStyle(color: Colors.green)),
+                    Divider(),
+                  ],
+                ),
               );
             },
           );
