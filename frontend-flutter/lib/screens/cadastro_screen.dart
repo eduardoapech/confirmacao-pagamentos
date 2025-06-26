@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:pagamentos_app/services/api_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class CadastroScreen extends StatefulWidget {
   final VoidCallback? onCadastroSucesso;
@@ -15,27 +18,91 @@ class _CadastroScreenState extends State<CadastroScreen> {
   String nome = '';
   int idade = 0;
   String ramo = 'Lobinho';
-  String? fotoUrl;
+  File? _imagemSelecionada;
 
-  void salvar() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        await ApiService.adicionarPessoa(nome, idade, ramo, fotoUrl);
+  final picker = ImagePicker();
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Usuário cadastrado com sucesso')),
-        );
+  Future<void> _selecionarImagem() async {
+    final permitido = await _solicitarPermissoes();
+    if (!permitido) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Permissão negada')),
+      );
+      return;
+    }
 
-        await Future.delayed(Duration(seconds: 1));
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: Icon(Icons.photo_camera),
+            title: Text('Tirar Foto'),
+            onTap: () async {
+              Navigator.pop(context);
+              final imagem = await picker.pickImage(
+                source: ImageSource.camera,
+                maxWidth: 400,
+                maxHeight: 400,
+                imageQuality: 80,
+              );
+              if (imagem != null) {
+                setState(() => _imagemSelecionada = File(imagem.path));
+              }
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.photo_library),
+            title: Text('Escolher da Galeria'),
+            onTap: () async {
+              Navigator.pop(context);
+              final imagem = await picker.pickImage(
+                source: ImageSource.gallery,
+                maxWidth: 400,
+                maxHeight: 400,
+                imageQuality: 80,
+              );
+              if (imagem != null) {
+                setState(() => _imagemSelecionada = File(imagem.path));
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
-        if (widget.onCadastroSucesso != null) {
-          widget.onCadastroSucesso!(); // informa à tela principal
-        }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao cadastrar: $e')),
-        );
-      }
+  Future<bool> _solicitarPermissoes() async {
+    final statusCamera = await Permission.camera.request();
+    final statusFotos = await Permission.photos.request(); // iOS
+    final statusStorage = await Permission.storage.request(); // Android
+
+    return statusCamera.isGranted &&
+        (statusFotos.isGranted || statusStorage.isGranted);
+  }
+
+  Future<void> salvar() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    try {
+      await ApiService.adicionarPessoaComImagem(
+        nome: nome,
+        idade: idade,
+        ramo: ramo,
+        imagem: _imagemSelecionada,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Usuário cadastrado com sucesso')),
+      );
+
+      await Future.delayed(Duration(seconds: 1));
+      widget.onCadastroSucesso?.call();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao cadastrar: $e')),
+      );
     }
   }
 
@@ -45,8 +112,28 @@ class _CadastroScreenState extends State<CadastroScreen> {
       padding: const EdgeInsets.all(16),
       child: Form(
         key: _formKey,
-        child: Column(
+        child: ListView(
           children: [
+            GestureDetector(
+              onTap: _selecionarImagem,
+              child: Center(
+                child: _imagemSelecionada != null
+                    ? ClipOval(
+                        child: Image.file(
+                          _imagemSelecionada!,
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.grey[200],
+                        child: Icon(Icons.camera_alt, size: 50),
+                      ),
+              ),
+            ),
+            SizedBox(height: 12),
             TextFormField(
               decoration: InputDecoration(labelText: 'Nome completo'),
               validator: (value) =>
@@ -70,10 +157,6 @@ class _CadastroScreenState extends State<CadastroScreen> {
                   .toList(),
               onChanged: (value) => setState(() => ramo = value!),
               validator: (value) => value == null ? 'Escolha um ramo' : null,
-            ),
-            TextFormField(
-              decoration: InputDecoration(labelText: 'URL da Foto (opcional)'),
-              onChanged: (value) => fotoUrl = value.isEmpty ? null : value,
             ),
             SizedBox(height: 20),
             ElevatedButton(onPressed: salvar, child: Text('Salvar')),

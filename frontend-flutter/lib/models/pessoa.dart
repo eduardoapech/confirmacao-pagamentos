@@ -20,4 +20,10 @@ class Pessoa {
         ramo: json['ramo'],
         fotoUrl: json['fotoUrl'],
       );
+
+  // 🔽 Getter que monta a URL completa
+  String? get fotoCompleta {
+    if (fotoUrl == null || fotoUrl!.isEmpty) return null;
+    return 'http://192.168.2.134:5000/$fotoUrl';
+  }
 }

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/historico_screen.dart';
@@ -54,7 +56,28 @@ class _MyAppState extends State<MyApp> {
                 title: Text('Cadastrar Usuário'),
                 onTap: () => _onSelectItem(1)),
             ListTile(title: Text('Histórico'), onTap: () => _onSelectItem(2)),
-            ListTile(title: Text('Sair'), onTap: () => Navigator.pop(context)),
+            ListTile(
+              title: Text('Sair'),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: Text('Sair do aplicativo'),
+                    content: Text('Tem certeza que deseja sair?'),
+                    actions: [
+                      TextButton(
+                        child: Text('Cancelar'),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      ElevatedButton(
+                        child: Text('Sair'),
+                        onPressed: () => exit(0), // Fecha o app
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),

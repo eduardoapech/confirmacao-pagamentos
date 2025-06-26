@@ -5,6 +5,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PagamentosApp.Models;
+using Microsoft.Extensions.FileProviders;
+using System.IO;
+
 
 namespace PagamentosApp
 {
@@ -22,9 +25,24 @@ namespace PagamentosApp
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment()) app.UseDeveloperExceptionPage();
+
             app.UseCors("AllowAll");
+
+            // 🔽 Aqui você expõe a pasta Uploads para acesso externo
+            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(uploadsPath),
+                RequestPath = "/uploads"
+            });
+
             app.UseRouting();
-            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
         }
+
     }
 }

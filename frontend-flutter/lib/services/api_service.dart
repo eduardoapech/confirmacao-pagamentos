@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:pagamentos_app/models/pagamento_historico.dart';
 import '../models/pessoa.dart';
@@ -40,19 +41,29 @@ class ApiService {
     }
   }
 
-  static Future<void> adicionarPessoa(
-      String nome, int idade, String ramo, String? fotoUrl) async {
+  static Future<void> adicionarPessoaComImagem({
+    required String nome,
+    required int idade,
+    required String ramo,
+    File? imagem,
+  }) async {
     final url = Uri.parse('$baseUrl/pessoa');
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'nome': nome,
-        'idade': idade,
-        'ramo': ramo,
-        'fotoUrl': fotoUrl,
-      }),
-    );
+
+    final request = http.MultipartRequest('POST', url)
+      ..fields['nome'] = nome
+      ..fields['idade'] = idade.toString()
+      ..fields['ramo'] = ramo;
+
+    if (imagem != null) {
+      final multipartFile = await http.MultipartFile.fromPath(
+        'foto',
+        imagem.path,
+      );
+      request.files.add(multipartFile);
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
 
     if (response.statusCode != 201) {
       throw Exception('Erro ao cadastrar pessoa: ${response.body}');
@@ -67,6 +78,40 @@ class ApiService {
       return jsonData.map((e) => PagamentoHistorico.fromJson(e)).toList();
     } else {
       throw Exception('Erro ao buscar histórico de pagamentos');
+    }
+  }
+
+  static Future<void> atualizarPessoa({
+    required int id,
+    required String nome,
+    required int idade,
+    required String ramo,
+    File? imagem,
+  }) async {
+    final uri = Uri.parse('$baseUrl/pessoa/$id');
+
+    final request = http.MultipartRequest('PUT', uri)
+      ..fields['nome'] = nome
+      ..fields['idade'] = idade.toString()
+      ..fields['ramo'] = ramo;
+
+    if (imagem != null) {
+      request.files.add(await http.MultipartFile.fromPath('foto', imagem.path));
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 200) {
+      throw Exception('Erro ao atualizar pessoa: ${response.body}');
+    }
+  }
+
+  static Future<void> deletarPessoa(int id) async {
+    final response = await http.delete(Uri.parse('$baseUrl/pessoa/$id'));
+
+    if (response.statusCode != 204) {
+      throw Exception('Erro ao deletar pessoa');
     }
   }
 }
